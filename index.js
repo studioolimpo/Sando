@@ -238,8 +238,8 @@ LITE VERSION - COMING SOON / ONE PAGER
         // ----- Config -----
         const cfg = {
             // speed is in px/sec
-            speedMin: 220,
-            speedMax: 350,
+            speedMin: 200,
+            speedMax: 320,
 
             // friction per second (0..1). Lower = more inertia.
             friction: 0.01,
@@ -252,7 +252,7 @@ LITE VERSION - COMING SOON / ONE PAGER
             repelStrength: 420, // impulse px/sec added on hit
 
             // soft clamp to avoid crazy spikes
-            maxSpeed: 700,
+            maxSpeed: 650,
         };
 
         // Ensure the element can move freely across viewport
@@ -273,6 +273,7 @@ LITE VERSION - COMING SOON / ONE PAGER
             right: "auto",
             bottom: "auto",
             willChange: "transform",
+            transformOrigin: "center center",
         });
 
         // Use quickSetters
@@ -349,6 +350,21 @@ LITE VERSION - COMING SOON / ONE PAGER
             webkitUserSelect: el.style.webkitUserSelect,
         };
 
+        // Grab feedback (shrink by ~0.5rem visually)
+        const GRAB_SHRINK_PX = 8; // 0.5rem @ 16px root
+        let grabTween = null;
+
+        function getGrabScale() {
+            // ensure w/h are fresh
+            updateSize();
+            if (!w || !h) return 0.94;
+            const sx = (w - GRAB_SHRINK_PX) / w;
+            const sy = (h - GRAB_SHRINK_PX) / h;
+            // keep aspect by using uniform scale
+            const s = Math.min(sx, sy);
+            return Math.max(0.7, Math.min(0.98, s));
+        }
+
         // Make it draggable-friendly
         el.style.cursor = "grab";
         el.style.touchAction = "none"; // prevent page scroll while dragging on mobile
@@ -368,6 +384,15 @@ LITE VERSION - COMING SOON / ONE PAGER
 
             isDragging = true;
             el.style.cursor = "grabbing";
+
+            // Visual feedback: shrink a bit while grabbed
+            grabTween?.kill();
+            grabTween = gsap.to(el, {
+                scale: getGrabScale(),
+                duration: 0.28,
+                ease: "power2.out",
+                overwrite: true,
+            });
 
             // stop physics integration while dragging (we still render via quickSetter)
             // keep velocities, we will overwrite them on release (throw)
@@ -425,6 +450,15 @@ LITE VERSION - COMING SOON / ONE PAGER
             if (!isDragging) return;
             isDragging = false;
             el.style.cursor = "grab";
+
+            // Restore size smoothly
+            grabTween?.kill();
+            grabTween = gsap.to(el, {
+                scale: 1,
+                duration: 0.38,
+                ease: "power2.out",
+                overwrite: true,
+            });
 
             // Release capture
             try { el.releasePointerCapture(e.pointerId); } catch (_) { }
@@ -540,6 +574,8 @@ LITE VERSION - COMING SOON / ONE PAGER
         return () => {
             rafActive = false;
             gsap.ticker.remove(tick);
+            grabTween?.kill();
+            grabTween = null;
             el.removeEventListener("pointerdown", onPointerDown);
             window.removeEventListener("pointermove", onPointerMove);
             window.removeEventListener("pointerup", onPointerUp);
@@ -636,7 +672,7 @@ LITE VERSION - COMING SOON / ONE PAGER
 
         // 2. Visual (Right Col): [data-hero-content] -> svg
         // 2. Visual (Right Col): [data-hero-content] -> .u-max-width-half (User Preference)
-        const heroContent = container.querySelector("[data-hero-content]");
+        const heroContent = container.querySelectorAll("[data-hero-content]");
 
         let visualEls = [];
         if (heroContent) {
