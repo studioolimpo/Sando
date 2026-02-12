@@ -27,7 +27,7 @@ LITE VERSION - COMING SOON / ONE PAGER
 
         // Loader manager
         loader: {
-            minDuration: 2500,
+            minDuration: 100,
             fadeInDuration: 2.0,
             fadeOutDuration: 1.2,
             ease: "power2.inOut",
@@ -637,6 +637,7 @@ LITE VERSION - COMING SOON / ONE PAGER
         });
     }
 
+
     /* =========================
     DYNAMIC YEAR
     ========================= */
@@ -654,7 +655,7 @@ LITE VERSION - COMING SOON / ONE PAGER
         return HERO_REGISTRY[namespace] || {};
     }
 
-    function animateHero(container) {
+function animateHero(container) {
     const namespace = getNamespace(container);
 
     const tl = gsap.timeline({
@@ -672,7 +673,6 @@ LITE VERSION - COMING SOON / ONE PAGER
     const reveal = (els, props = {}) => {
         if (!els || !els.length) return null;
 
-        // GPU hints
         gsap.set(els, {
             willChange: "clip-path, transform",
             force3D: true,
@@ -686,10 +686,9 @@ LITE VERSION - COMING SOON / ONE PAGER
                 delay: 0.4,
                 y: "0%",
                 clipPath: "inset(0 0 -5% 0)",
-                duration: 1.4,
+                duration: 1.0,
                 stagger: 0.15,
                 ...props.to,
-                // Cleanup will-change dopo l'animazione per liberare memoria GPU
                 onComplete: () => gsap.set(els, { willChange: "auto" }),
             },
             position: props.position ?? undefined,
@@ -699,12 +698,12 @@ LITE VERSION - COMING SOON / ONE PAGER
     const sections = [
         {
             els: getContentEls("top"),
-            to: { duration: 1.4, stagger: 0.15 },
+            to: { duration: 1.0, stagger: 0.15 },
         },
         {
             els: q("#logo-sando path"),
             to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
-            position: "<0.4",
+            position: "<0.3",
         },
         {
             els: q("#logo-japan > svg"),
@@ -713,14 +712,15 @@ LITE VERSION - COMING SOON / ONE PAGER
             position: "<0.05",
         },
         {
-            els: q('[data-hero-content="paragraph"] > *'),
-            to: { duration: 1.2, stagger: 0.2, ease: "power4.out" },
-            position: "<0.4",
+            els: q("#coming-soon"),
+            to: { duration: 1.4, stagger: 0 },
+            position: "<0.1",
         },
         {
-            els: getContentEls("bottom"),
-            to: { duration: 1.2, stagger: 0.18 },
-            position: "<0.15",
+            els: q('[data-hero-content="paragraph"] .u-content-wrapper > *'),
+            to: { duration: 1.2, stagger: 0.15, ease: "power4.out", clipPath: "inset(0 0 -15% 0)" },
+            from: { clipPath: "inset(0 0 115% 0)" },
+            position: "<0.2",
         },
     ];
 
@@ -728,6 +728,27 @@ LITE VERSION - COMING SOON / ONE PAGER
         const r = reveal(els, { to, from, position });
         if (r) tl.to(els, r.to, r.position);
     });
+
+    // === SHOKU ENTRANCE ===
+    const shokuEl = document.querySelector(".shoku_wrap");
+    if (shokuEl) {
+        gsap.set(shokuEl, {
+            autoAlpha: 0,
+            scale: 0,
+            rotation: -12,
+            force3D: true,
+            willChange: "transform, opacity",
+        });
+
+        tl.to(shokuEl, {
+            autoAlpha: 1,
+            scale: 1,
+            rotation: 0,
+            duration: 1.0,
+            ease: "back.out(1.7)",
+            onComplete: () => gsap.set(shokuEl, { willChange: "transform" }),
+        }, "-=0.8");
+    }
 
     tl.addLabel("hero:done");
     return tl;
