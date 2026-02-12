@@ -733,7 +733,7 @@ function animateHero(container) {
         ease: "expo.out",
       },
       // prima lettera quasi subito, poi un filo dopo per le successive
-      position: i === 0 ? "<0.05" : "<0.12",
+      position: i === 0 ? "<0.05" : "<0.05",
     })),
 
     // COMING SOON (anti-troncatura discendenti)
