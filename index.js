@@ -670,45 +670,31 @@ function animateHero(container) {
     return wrapper.length ? wrapper : q(`[data-hero-content="${attr}"] > *`);
   };
 
-  // Stabilizza trasformazioni SVG su mobile/desktop
-  const japanSvgs = q("#logo-japan > svg");
-  if (japanSvgs.length) {
-    gsap.set(japanSvgs, {
-      transformBox: "fill-box",
-      transformOrigin: "50% 50%",
-    });
-  }
-
+  // Improved reveal: allows closedClip/openClip overrides per section
   const reveal = (els, props = {}) => {
     if (!els || !els.length) return null;
 
     const closedClip = props.closedClip ?? "inset(0 0 120% 0)";
     const openClip = props.openClip ?? "inset(-25% 0 -25% 0)";
-    const useYPercent = !!props.useYPercent;
 
-    // ✅ Base set: o yPercent o y, mai entrambi
-    const baseSet = {
+    gsap.set(els, {
       willChange: "clip-path, transform",
       force3D: true,
+      y: "110%",
       clipPath: closedClip,
-      ...(useYPercent ? { yPercent: 110 } : { y: "110%" }),
       ...props.from,
-    };
-
-    gsap.set(els, baseSet);
-
-    const baseTo = {
-      delay: 0.4,
-      clipPath: openClip,
-      duration: 1.0,
-      stagger: 0.15,
-      ...(useYPercent ? { yPercent: 0 } : { y: "0%" }),
-      ...props.to,
-      onComplete: () => gsap.set(els, { willChange: "auto" }),
-    };
+    });
 
     return {
-      to: baseTo,
+      to: {
+        delay: 0.4,
+        y: "0%",
+        clipPath: openClip,        // IMPORTANT: open state has bleed
+        duration: 1.0,
+        stagger: 0.15,
+        ...props.to,
+        onComplete: () => gsap.set(els, { willChange: "auto" }),
+      },
       position: props.position ?? undefined,
     };
   };
@@ -724,36 +710,38 @@ function animateHero(container) {
       position: "<0.3",
     },
     {
-      // ✅ LOGO JAPAN: ora si muove davvero (testo che sale, maschera “ferma”)
-      els: q("#logo-japan > svg"),
-      useYPercent: true,
-      from: { yPercent: 120 }, // parte sotto
+      els: q("#logo-japan > path"),
       to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
+      from: { y: "110%" },
       position: "<0.05",
     },
+
+    // ✅ COMING SOON: clip-path tuned to NOT cut descenders (g, p, q, y...)
     {
-      // COMING SOON: anti-troncatura discendenti
       els: q("#coming-soon"),
+      // keep it closed “deep” so it starts hidden cleanly
       closedClip: "inset(0 0 140% 0)",
+      // open with strong bleed, especially on the bottom
       openClip: "inset(-30% 0 -45% 0)",
       to: { duration: 1.2, stagger: 0, ease: "power3.out" },
       position: "<0.1",
     },
+
     {
       els: q('[data-hero-content="paragraph"] .u-content-wrapper > *'),
+      // for these you can keep a lighter bleed if you want
       openClip: "inset(-20% 0 -25% 0)",
       to: { duration: 1.2, stagger: 0.15, ease: "power4.out" },
       position: "<0.2",
     },
   ];
 
-  sections.forEach((cfg) => {
-    const { els, position, ...props } = cfg;
-    const r = reveal(els, { ...props, position });
+  sections.forEach(({ els, to, from, position, closedClip, openClip }) => {
+    const r = reveal(els, { to, from, position, closedClip, openClip });
     if (r) tl.to(els, r.to, r.position);
   });
 
-  // SHOKU ENTRANCE
+  // === SHOKU ENTRANCE ===
   const shokuEl = document.querySelector(".shoku_wrap");
   if (shokuEl) {
     gsap.set(shokuEl, {
