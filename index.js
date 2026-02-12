@@ -689,7 +689,7 @@ function animateHero(container) {
       to: {
         delay: 0.4,
         y: "0%",
-        clipPath: openClip,
+        clipPath: openClip,        // IMPORTANT: open state has bleed
         duration: 1.0,
         stagger: 0.15,
         ...props.to,
@@ -699,55 +699,37 @@ function animateHero(container) {
     };
   };
 
-  // --- LOGO JAPAN GROUPING (1 + 2 + 3 paths) ---
-  const japanPaths = Array.from(container.querySelectorAll("#logo-japan path"));
-
-  // Letter groups: [0] = 1 path, [1] = next 2, [2] = next 3
-  const japanGroups = [
-    japanPaths.slice(0, 1),
-    japanPaths.slice(1, 3),
-    japanPaths.slice(3, 6),
-  ].filter((g) => g.length);
-
   const sections = [
-    // TOP
     {
       els: getContentEls("top"),
       to: { duration: 1.0, stagger: 0.15 },
     },
-
-    // LOGO SANDO
     {
       els: q("#logo-sando path"),
       to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
       position: "<0.3",
     },
-
-    // LOGO JAPAN — 3 LETTER GROUPS (with internal stagger + inter-letter cadence)
-    ...japanGroups.map((group, i) => ({
-      els: group,
+    {
+      els: q("#logo-japan > path"),
+      to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
       from: { y: "110%" },
-      to: {
-        duration: 1.2,
-        stagger: 0.04,       // stagger interno alla lettera
-        ease: "expo.out",
-      },
-      // prima lettera quasi subito, poi un filo dopo per le successive
-      position: i === 0 ? "<0.05" : "<0.05",
-    })),
+      position: "<0.05",
+    },
 
-    // COMING SOON (anti-troncatura discendenti)
+    // ✅ COMING SOON: clip-path tuned to NOT cut descenders (g, p, q, y...)
     {
       els: q("#coming-soon"),
+      // keep it closed “deep” so it starts hidden cleanly
       closedClip: "inset(0 0 140% 0)",
+      // open with strong bleed, especially on the bottom
       openClip: "inset(-30% 0 -45% 0)",
       to: { duration: 1.2, stagger: 0, ease: "power3.out" },
       position: "<0.1",
     },
 
-    // PARAGRAPH
     {
       els: q('[data-hero-content="paragraph"] .u-content-wrapper > *'),
+      // for these you can keep a lighter bleed if you want
       openClip: "inset(-20% 0 -25% 0)",
       to: { duration: 1.2, stagger: 0.15, ease: "power4.out" },
       position: "<0.2",
@@ -770,18 +752,14 @@ function animateHero(container) {
       willChange: "transform, opacity",
     });
 
-    tl.to(
-      shokuEl,
-      {
-        autoAlpha: 1,
-        scale: 1,
-        rotation: 0,
-        duration: 1.0,
-        ease: "back.out(1.7)",
-        onComplete: () => gsap.set(shokuEl, { willChange: "transform" }),
-      },
-      "-=0.8"
-    );
+    tl.to(shokuEl, {
+      autoAlpha: 1,
+      scale: 1,
+      rotation: 0,
+      duration: 1.0,
+      ease: "back.out(1.7)",
+      onComplete: () => gsap.set(shokuEl, { willChange: "transform" }),
+    }, "-=0.8");
   }
 
   tl.addLabel("hero:done");
