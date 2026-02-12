@@ -655,91 +655,83 @@ LITE VERSION - COMING SOON / ONE PAGER
     }
 
     function animateHero(container) {
-        // Simple Single Page Logic - No complex config/registry needed
-        const namespace = getNamespace(container);
+    const namespace = getNamespace(container);
 
-        const tl = gsap.timeline({
-            defaults: { ease: "power2.out" },
-            onStart: () => log(`Hero START: ${namespace}`),
-            onComplete: () => log(`Hero COMPLETE: ${namespace}`),
+    const tl = gsap.timeline({
+        defaults: { ease: "expo.out" },
+        onStart: () => log(`Hero START: ${namespace}`),
+        onComplete: () => log(`Hero COMPLETE: ${namespace}`),
+    });
+
+    const q = (sel) => container.querySelectorAll(sel);
+    const getContentEls = (attr) => {
+        const wrapper = q(`[data-hero-content="${attr}"] .u-content-wrapper > *`);
+        return wrapper.length ? wrapper : q(`[data-hero-content="${attr}"] > *`);
+    };
+
+    const reveal = (els, props = {}) => {
+        if (!els || !els.length) return null;
+
+        // GPU hints
+        gsap.set(els, {
+            willChange: "clip-path, transform",
+            force3D: true,
+            y: "110%",
+            clipPath: "inset(0 0 105% 0)",
+            ...props.from,
         });
 
-        // Selectors based on provided HTML
-        // 1. Text (Left Col): .variable-text and .button_link_wrap
-        const textEl = container.querySelector(".variable-text");
-        const btnEl = container.querySelector(".button_link_wrap");
-        const textGroup = [textEl, btnEl].filter(Boolean);
+        return {
+            to: {
+                delay: 0.4,
+                y: "0%",
+                clipPath: "inset(0 0 -5% 0)",
+                duration: 1.4,
+                stagger: 0.15,
+                ...props.to,
+                // Cleanup will-change dopo l'animazione per liberare memoria GPU
+                onComplete: () => gsap.set(els, { willChange: "auto" }),
+            },
+            position: props.position ?? undefined,
+        };
+    };
 
-        // 2. Visual (Right Col): [data-hero-content] -> svg
-        // 2. Visual (Right Col): [data-hero-content] -> .u-max-width-half (User Preference)
-        const heroContent = container.querySelectorAll("[data-hero-content]");
+    const sections = [
+        {
+            els: getContentEls("top"),
+            to: { duration: 1.4, stagger: 0.15 },
+        },
+        {
+            els: q("#logo-sando path"),
+            to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
+            position: "<0.4",
+        },
+        {
+            els: q("#logo-japan > svg"),
+            to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
+            from: { y: "120%" },
+            position: "<0.05",
+        },
+        {
+            els: q('[data-hero-content="paragraph"] > *'),
+            to: { duration: 1.2, stagger: 0.2, ease: "power4.out" },
+            position: "<0.4",
+        },
+        {
+            els: getContentEls("bottom"),
+            to: { duration: 1.2, stagger: 0.18 },
+            position: "<0.15",
+        },
+    ];
 
-        let visualEls = [];
-        if (heroContent) {
-            // Priority: Explicit user class > SVG > Children
-            const userTarget = heroContent.querySelector(".u-max-width-half");
-            if (userTarget) {
-                visualEls = [userTarget];
-            } else {
-                const svgs = heroContent.querySelectorAll("svg");
-                visualEls = svgs.length ? svgs : getAnimatableChildren(heroContent);
-            }
-        }
+    sections.forEach(({ els, to, from, position }) => {
+        const r = reveal(els, { to, from, position });
+        if (r) tl.to(els, r.to, r.position);
+    });
 
-        // === PREMIUM ENTRANCE (Universal) ===
-        // A. Visual: Scale down + Blur fade
-        if (visualEls.length > 0) {
-            gsap.set(visualEls, {
-                autoAlpha: 0,
-                scale: 0.7,
-                filter: "blur(5px)",
-                transformOrigin: "center center"
-            });
-
-            tl.to(visualEls, {
-                autoAlpha: 1,
-                scale: 1,
-                filter: "blur(0px)",
-                duration: 2.2,
-                ease: "power3.out",
-                clearProps: "filter",
-                /*onComplete: () => {
-                    // Infinite subtle pulse
-                    gsap.to(visualEls, {
-                        scale: 1.05,
-                        duration: 2.5,
-                        ease: "sine.inOut",
-                        yoyo: true,
-                        repeat: -1
-                    });
-                }*/
-            }, 0.1);
-        }
-
-        tl.addLabel("hero:contentStart", 0.4);
-
-        // B. Text: Clip Path Mask Slide Up
-        if (textGroup.length > 0) {
-            tl.fromTo(textGroup,
-                {
-                    y: "100%",
-                    clipPath: "inset(0 0 100% 0)"
-                },
-                {
-                    y: "0%",
-                    clipPath: "inset(0 0 0% 0)",
-                    duration: 0.7,
-                    stagger: 0.09,
-                    ease: "power3.out",
-                    clearProps: "clipPath" // Cleanup interactions
-                },
-                0.5
-            );
-        }
-
-        tl.addLabel("hero:done");
-        return tl;
-    }
+    tl.addLabel("hero:done");
+    return tl;
+}
 
     // Simplified reveal dispatcher
     function createRevealSequence(container) {
@@ -752,6 +744,7 @@ LITE VERSION - COMING SOON / ONE PAGER
             timeline: master,
             cleanup: () => {
                 master.kill();
+                try { heroTL?.__cleanup?.(); } catch (_) { }
             },
         };
     }
