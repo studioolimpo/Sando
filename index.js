@@ -656,102 +656,114 @@ LITE VERSION - COMING SOON / ONE PAGER
     }
 
 function animateHero(container) {
-    const namespace = getNamespace(container);
+  const namespace = getNamespace(container);
 
-    const tl = gsap.timeline({
-        defaults: { ease: "expo.out" },
-        onStart: () => log(`Hero START: ${namespace}`),
-        onComplete: () => log(`Hero COMPLETE: ${namespace}`),
+  const tl = gsap.timeline({
+    defaults: { ease: "expo.out" },
+    onStart: () => log(`Hero START: ${namespace}`),
+    onComplete: () => log(`Hero COMPLETE: ${namespace}`),
+  });
+
+  const q = (sel) => container.querySelectorAll(sel);
+  const getContentEls = (attr) => {
+    const wrapper = q(`[data-hero-content="${attr}"] .u-content-wrapper > *`);
+    return wrapper.length ? wrapper : q(`[data-hero-content="${attr}"] > *`);
+  };
+
+  // Improved reveal: allows closedClip/openClip overrides per section
+  const reveal = (els, props = {}) => {
+    if (!els || !els.length) return null;
+
+    const closedClip = props.closedClip ?? "inset(0 0 120% 0)";
+    const openClip = props.openClip ?? "inset(-25% 0 -25% 0)";
+
+    gsap.set(els, {
+      willChange: "clip-path, transform",
+      force3D: true,
+      y: "110%",
+      clipPath: closedClip,
+      ...props.from,
     });
 
-    const q = (sel) => container.querySelectorAll(sel);
-    const getContentEls = (attr) => {
-        const wrapper = q(`[data-hero-content="${attr}"] .u-content-wrapper > *`);
-        return wrapper.length ? wrapper : q(`[data-hero-content="${attr}"] > *`);
+    return {
+      to: {
+        delay: 0.4,
+        y: "0%",
+        clipPath: openClip,        // IMPORTANT: open state has bleed
+        duration: 1.0,
+        stagger: 0.15,
+        ...props.to,
+        onComplete: () => gsap.set(els, { willChange: "auto" }),
+      },
+      position: props.position ?? undefined,
     };
+  };
 
-    const reveal = (els, props = {}) => {
-        if (!els || !els.length) return null;
+  const sections = [
+    {
+      els: getContentEls("top"),
+      to: { duration: 1.0, stagger: 0.15 },
+    },
+    {
+      els: q("#logo-sando path"),
+      to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
+      position: "<0.3",
+    },
+    {
+      els: q("#logo-japan > svg"),
+      to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
+      from: { y: "120%" },
+      position: "<0.05",
+    },
 
-        gsap.set(els, {
-            willChange: "clip-path, transform",
-            force3D: true,
-            y: "110%",
-            clipPath: "inset(0 0 105% 0)",
-            ...props.from,
-        });
+    // ✅ COMING SOON: clip-path tuned to NOT cut descenders (g, p, q, y...)
+    {
+      els: q("#coming-soon"),
+      // keep it closed “deep” so it starts hidden cleanly
+      closedClip: "inset(0 0 140% 0)",
+      // open with strong bleed, especially on the bottom
+      openClip: "inset(-30% 0 -45% 0)",
+      to: { duration: 1.2, stagger: 0, ease: "power3.out" },
+      position: "<0.1",
+    },
 
-        return {
-            to: {
-                delay: 0.4,
-                y: "0%",
-                clipPath: "inset(0 0 -5% 0)",
-                duration: 1.0,
-                stagger: 0.15,
-                ...props.to,
-                onComplete: () => gsap.set(els, { willChange: "auto" }),
-            },
-            position: props.position ?? undefined,
-        };
-    };
+    {
+      els: q('[data-hero-content="paragraph"] .u-content-wrapper > *'),
+      // for these you can keep a lighter bleed if you want
+      openClip: "inset(-20% 0 -25% 0)",
+      to: { duration: 1.2, stagger: 0.15, ease: "power4.out" },
+      position: "<0.2",
+    },
+  ];
 
-    const sections = [
-        {
-            els: getContentEls("top"),
-            to: { duration: 1.0, stagger: 0.15 },
-        },
-        {
-            els: q("#logo-sando path"),
-            to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
-            position: "<0.3",
-        },
-        {
-            els: q("#logo-japan > svg"),
-            to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
-            from: { y: "120%" },
-            position: "<0.05",
-        },
-        {
-            els: q("#coming-soon"),
-            to: { duration: 1.4, stagger: 0 },
-            position: "<0.1",
-        },
-        {
-            els: q('[data-hero-content="paragraph"] .u-content-wrapper > *'),
-            to: { duration: 1.2, stagger: 0.15, ease: "power4.out", clipPath: "inset(0 0 -15% 0)" },
-            from: { clipPath: "inset(0 0 115% 0)" },
-            position: "<0.2",
-        },
-    ];
+  sections.forEach(({ els, to, from, position, closedClip, openClip }) => {
+    const r = reveal(els, { to, from, position, closedClip, openClip });
+    if (r) tl.to(els, r.to, r.position);
+  });
 
-    sections.forEach(({ els, to, from, position }) => {
-        const r = reveal(els, { to, from, position });
-        if (r) tl.to(els, r.to, r.position);
+  // === SHOKU ENTRANCE ===
+  const shokuEl = document.querySelector(".shoku_wrap");
+  if (shokuEl) {
+    gsap.set(shokuEl, {
+      autoAlpha: 0,
+      scale: 0,
+      rotation: -12,
+      force3D: true,
+      willChange: "transform, opacity",
     });
 
-    // === SHOKU ENTRANCE ===
-    const shokuEl = document.querySelector(".shoku_wrap");
-    if (shokuEl) {
-        gsap.set(shokuEl, {
-            autoAlpha: 0,
-            scale: 0,
-            rotation: -12,
-            force3D: true,
-            willChange: "transform, opacity",
-        });
+    tl.to(shokuEl, {
+      autoAlpha: 1,
+      scale: 1,
+      rotation: 0,
+      duration: 1.0,
+      ease: "back.out(1.7)",
+      onComplete: () => gsap.set(shokuEl, { willChange: "transform" }),
+    }, "-=0.8");
+  }
 
-        tl.to(shokuEl, {
-            autoAlpha: 1,
-            scale: 1,
-            rotation: 0,
-            duration: 1.0,
-            ease: "back.out(1.7)",
-            onComplete: () => gsap.set(shokuEl, { willChange: "transform" }),
-        }, "-=0.8");
-    }
-
-    tl.addLabel("hero:done");
-    return tl;
+  tl.addLabel("hero:done");
+  return tl;
 }
 
     // Simplified reveal dispatcher
