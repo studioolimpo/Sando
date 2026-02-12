@@ -670,6 +670,15 @@ function animateHero(container) {
     return wrapper.length ? wrapper : q(`[data-hero-content="${attr}"] > *`);
   };
 
+  // --- Pre-stabilize SVG transforms (mobile/desktop consistency) ---
+  const japanSvgs = q("#logo-japan > svg");
+  if (japanSvgs.length) {
+    gsap.set(japanSvgs, {
+      transformBox: "fill-box",
+      transformOrigin: "50% 50%",
+    });
+  }
+
   // Improved reveal: allows closedClip/openClip overrides per section
   const reveal = (els, props = {}) => {
     if (!els || !els.length) return null;
@@ -689,7 +698,7 @@ function animateHero(container) {
       to: {
         delay: 0.4,
         y: "0%",
-        clipPath: openClip,        // IMPORTANT: open state has bleed
+        clipPath: openClip, // open state has bleed
         duration: 1.0,
         stagger: 0.15,
         ...props.to,
@@ -710,26 +719,22 @@ function animateHero(container) {
       position: "<0.3",
     },
     {
+      // ✅ Japan: consistent across desktop/mobile
       els: q("#logo-japan > svg"),
       to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
-      from: { y: "120%" },
+      from: { yPercent: 120 }, // ✅ was y:"120%" (inconsistent)
       position: "<0.05",
     },
-
-    // ✅ COMING SOON: clip-path tuned to NOT cut descenders (g, p, q, y...)
     {
+      // ✅ COMING SOON: tuned to NOT cut descenders (g, p, q, y...)
       els: q("#coming-soon"),
-      // keep it closed “deep” so it starts hidden cleanly
       closedClip: "inset(0 0 140% 0)",
-      // open with strong bleed, especially on the bottom
       openClip: "inset(-30% 0 -45% 0)",
       to: { duration: 1.2, stagger: 0, ease: "power3.out" },
       position: "<0.1",
     },
-
     {
       els: q('[data-hero-content="paragraph"] .u-content-wrapper > *'),
-      // for these you can keep a lighter bleed if you want
       openClip: "inset(-20% 0 -25% 0)",
       to: { duration: 1.2, stagger: 0.15, ease: "power4.out" },
       position: "<0.2",
