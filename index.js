@@ -670,7 +670,7 @@ function animateHero(container) {
     return wrapper.length ? wrapper : q(`[data-hero-content="${attr}"] > *`);
   };
 
-  // --- Pre-stabilize SVG transforms (mobile/desktop consistency) ---
+  // Stabilizza trasformazioni SVG su mobile/desktop
   const japanSvgs = q("#logo-japan > svg");
   if (japanSvgs.length) {
     gsap.set(japanSvgs, {
@@ -679,31 +679,36 @@ function animateHero(container) {
     });
   }
 
-  // Improved reveal: allows closedClip/openClip overrides per section
   const reveal = (els, props = {}) => {
     if (!els || !els.length) return null;
 
     const closedClip = props.closedClip ?? "inset(0 0 120% 0)";
     const openClip = props.openClip ?? "inset(-25% 0 -25% 0)";
+    const useYPercent = !!props.useYPercent;
 
-    gsap.set(els, {
+    // ✅ Base set: o yPercent o y, mai entrambi
+    const baseSet = {
       willChange: "clip-path, transform",
       force3D: true,
-      y: "110%",
       clipPath: closedClip,
+      ...(useYPercent ? { yPercent: 110 } : { y: "110%" }),
       ...props.from,
-    });
+    };
+
+    gsap.set(els, baseSet);
+
+    const baseTo = {
+      delay: 0.4,
+      clipPath: openClip,
+      duration: 1.0,
+      stagger: 0.15,
+      ...(useYPercent ? { yPercent: 0 } : { y: "0%" }),
+      ...props.to,
+      onComplete: () => gsap.set(els, { willChange: "auto" }),
+    };
 
     return {
-      to: {
-        delay: 0.4,
-        y: "0%",
-        clipPath: openClip, // open state has bleed
-        duration: 1.0,
-        stagger: 0.15,
-        ...props.to,
-        onComplete: () => gsap.set(els, { willChange: "auto" }),
-      },
+      to: baseTo,
       position: props.position ?? undefined,
     };
   };
@@ -719,14 +724,15 @@ function animateHero(container) {
       position: "<0.3",
     },
     {
-      // ✅ Japan: consistent across desktop/mobile
+      // ✅ LOGO JAPAN: ora si muove davvero (testo che sale, maschera “ferma”)
       els: q("#logo-japan > svg"),
+      useYPercent: true,
+      from: { yPercent: 120 }, // parte sotto
       to: { duration: 1.6, stagger: 0.04, ease: "expo.out" },
-      from: { yPercent: 120 }, // ✅ was y:"120%" (inconsistent)
       position: "<0.05",
     },
     {
-      // ✅ COMING SOON: tuned to NOT cut descenders (g, p, q, y...)
+      // COMING SOON: anti-troncatura discendenti
       els: q("#coming-soon"),
       closedClip: "inset(0 0 140% 0)",
       openClip: "inset(-30% 0 -45% 0)",
@@ -741,12 +747,13 @@ function animateHero(container) {
     },
   ];
 
-  sections.forEach(({ els, to, from, position, closedClip, openClip }) => {
-    const r = reveal(els, { to, from, position, closedClip, openClip });
+  sections.forEach((cfg) => {
+    const { els, position, ...props } = cfg;
+    const r = reveal(els, { ...props, position });
     if (r) tl.to(els, r.to, r.position);
   });
 
-  // === SHOKU ENTRANCE ===
+  // SHOKU ENTRANCE
   const shokuEl = document.querySelector(".shoku_wrap");
   if (shokuEl) {
     gsap.set(shokuEl, {
