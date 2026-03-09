@@ -723,7 +723,7 @@ function animateHero(container) {
       closedClip: "inset(0 0 140% 0)",
       // open with strong bleed, especially on the bottom
       openClip: "inset(-30% 0 -45% 0)",
-      to: { duration: 1.2, stagger: 0, ease: "power3.out" },
+      to: { duration: 1.2, stagger: 0.2, ease: "power3.out" },
       position: "<0.1",
     },
 
