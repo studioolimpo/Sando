@@ -1,0 +1,370 @@
+/* ============================================================
+   STUDIO OLIMPO — CUSTOM CSS
+   ============================================================
+   01. CSS Reset / Utility
+   02. Lenis
+   03. Loader
+   04. Transition Overlay
+   05. Typography — Stroke
+   06. Typography — Text Small
+   07. Reveal on Scroll
+   08. Hero Visual Elements
+   09. Hero Slideshow
+   10. Nav — Active State
+   11. Footer — Base
+   12. Focus-Visible
+   13. Hover (any-hover: hover)
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   01. CSS RESET / UTILITY
+------------------------------------------------------------ */
+
+html:not(.wf-design-mode) [data-prevent-flicker] {
+  opacity: 0;
+}
+
+
+/* ------------------------------------------------------------
+   02. LENIS
+------------------------------------------------------------ */
+
+html.lenis-stopped,
+body.lenis-stopped {
+  overflow: hidden !important;
+}
+
+
+/* ------------------------------------------------------------
+   03. LOADER
+------------------------------------------------------------ */
+
+.wf-design-mode .loader {
+  display: none;
+}
+
+[data-load-reset],
+[data-load-logo] {
+  opacity: 0;
+}
+
+
+/* ------------------------------------------------------------
+   04. TRANSITION OVERLAY
+------------------------------------------------------------ */
+
+.transition_wrap {
+  z-index: 100;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  overflow: clip;
+}
+
+.transition_dark {
+  opacity: 0;
+  background-color: var(--swatch--brand-800);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+
+/* ------------------------------------------------------------
+   05. TYPOGRAPHY — STROKE
+------------------------------------------------------------ */
+
+h1,
+.u-text-style-h1,
+.u-text-style-h5,
+.u-text-style-h3,
+.u-text-style-h6,
+[data-wf--typography-heading--variant="h5"],
+[data-wf--typography-heading--variant="h1"],
+[data-wf--typography-heading--variant="display"],
+[data-wf--typography-plain--variant="h3"] {
+  -webkit-text-stroke: 0.4px currentColor;
+  padding-inline-end: 0.05em;
+  margin-inline-end: -0.05em;
+}
+
+.u-text-style-h6 {
+  -webkit-text-stroke: 0.2px currentColor;
+  padding-inline-end: 0.1em;
+  margin-inline-end: -0.1em;
+}
+
+
+/* ------------------------------------------------------------
+   06. TYPOGRAPHY — TEXT SMALL
+------------------------------------------------------------ */
+
+[data-wf--typography-plain--variant="text-small"] {
+  text-align: justify;
+  text-align-last: justify;
+  padding-block: 0.1em;
+}
+
+[data-wf--typography-paragraph--variant="text-small"] {
+  justify-self: start;
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-word;
+}
+
+[data-wf--typography-paragraph--variant="text-small"] p {
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-word;
+}
+
+
+/* ------------------------------------------------------------
+   07. REVEAL ON SCROLL
+------------------------------------------------------------ */
+
+html:not(.wf-design-mode) [data-reveal-group] {
+  visibility: hidden;
+}
+
+[data-reveal-group] {
+  --reveal-distance: 1em;
+  --reveal-start: top 90%;
+}
+
+@container (width < 61em) {
+  [data-reveal-group] {
+    --reveal-distance: 1em;
+    --reveal-start: top 90%;
+  }
+}
+
+@container (width < 35em) {
+  [data-reveal-group] {
+    --reveal-distance: 1em;
+    --reveal-start: top 95%;
+  }
+}
+
+@container (width < 20em) {
+  [data-reveal-group] {
+    --reveal-distance: 0.75em;
+    --reveal-start: top 99%;
+  }
+}
+
+
+/* ------------------------------------------------------------
+   08. HERO VISUAL ELEMENTS — Posizioni mobile
+   (CSS only — GSAP non tocca questi elementi)
+------------------------------------------------------------ */
+
+@media (max-width: 35em) {
+  .hero_visual_element-1 {
+    transform: translate(6em, -18em) rotate(-10.14deg) !important;
+  }
+
+  .hero_visual_element-3 {
+    transform: translate(-30em, 9em) rotate(-10deg) !important;
+  }
+
+  .hero_visual_element-4 {
+    transform: translate(32em, -43em) rotate(-10.14deg) !important;
+  }
+
+  .hero_visual_element-6 {
+    transform: translate(73em, 46em) rotate(-10.14deg) !important;
+  }
+}
+
+
+/* ------------------------------------------------------------
+   09. HERO SLIDESHOW — Home
+------------------------------------------------------------ */
+
+[data-hero-slideshow] {
+  visibility: hidden;
+}
+
+[data-hero-slideshow] .u-image-wrapper {
+  position: static !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  aspect-ratio: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[data-hero-slideshow] .u-image {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  max-width: none !important;
+}
+
+[data-hero-slideshow] .slideshow-slot {
+  position: absolute;
+  width: var(--max-width--visual-hero-home, 8rem);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+}
+
+
+/* ------------------------------------------------------------
+   10. NAV — Active State
+------------------------------------------------------------ */
+
+.nav_link_wrap:has(.clickable_link[aria-current="page"]) .nav_link_text {
+  opacity: 0.5;
+}
+
+.nav_link_wrap:has(.clickable_link[aria-current="page"]) {
+  cursor: default;
+}
+
+/* Transition base (opacity active state) */
+.nav_link_text,
+.nav_links_item > .u-text-style-h5 {
+  transition: opacity 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* ------------------------------------------------------------
+   11. FOOTER — Base
+------------------------------------------------------------ */
+
+.footer_link_text {
+  text-shadow: none !important;
+  transform: none !important;
+  transition: opacity 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.footer_link_wrap[aria-current="page"] {
+  cursor: default;
+}
+
+.footer_link_wrap[aria-current="page"] .footer_link_text {
+  opacity: 0.55;
+}
+
+.footer_dark {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  background-color: var(--swatch--brand-800);
+  pointer-events: none;
+}
+
+
+/* ------------------------------------------------------------
+   12. FOCUS-VISIBLE — Always on (keyboard / Magic Keyboard)
+------------------------------------------------------------ */
+
+[data-trigger]:focus-visible .button_main_text {
+  transform: translateY(-2.6em) rotate(0.001deg);
+}
+
+[data-trigger]:focus-visible .nav_link_text {
+  transform: translateY(-1.3em) rotate(0.001deg);
+}
+
+.nav_link_wrap[aria-current="page"]:focus-visible .nav_link_text {
+  transform: translateY(0em) rotate(0.001deg);
+}
+
+.footer_link_wrap:focus-visible .footer_link_text {
+  opacity: 0.55;
+}
+
+
+/* ------------------------------------------------------------
+   13. HOVER — Only on hover-capable devices
+------------------------------------------------------------ */
+
+@media (any-hover: hover) {
+
+  /* — Button — */
+
+  .button_main_element {
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 0.9em;
+    margin-bottom: -0.9em;
+  }
+
+  .button_main_text {
+    display: inline-block;
+    position: relative;
+    transform: translateY(0em) rotate(0.001deg);
+    transition: transform 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+    text-shadow:
+      0px 2.6em currentColor,
+      0.2px 2.6em currentColor,
+      -0.2px 2.6em currentColor,
+      0px calc(2.6em + 0.2px) currentColor,
+      0px calc(2.6em - 0.2px) currentColor;
+  }
+
+  .button_main_element.is--second .button_main_text {
+    transition-delay: 0.01s;
+  }
+
+  [data-trigger]:hover .button_main_text {
+    transform: translateY(-2.6em) rotate(0.001deg);
+  }
+
+  /* — Nav — */
+
+  .nav_link_element {
+    overflow: hidden;
+    position: relative;
+    padding-inline: 0.1em;
+    margin-inline: -0.1em;
+    padding-bottom: 0.1em;
+    margin-bottom: -0.1em;
+  }
+
+  .nav_link_text {
+    display: inline-block;
+    position: relative;
+    transform: translateY(0em) rotate(0.001deg);
+    transition: transform 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+    text-shadow:
+      0px 1.3em currentColor,
+      0.1px 1.3em currentColor,
+      -0.1px 1.3em currentColor,
+      0px calc(1.3em + 0.1px) currentColor,
+      0px calc(1.3em - 0.1px) currentColor;
+  }
+
+  [data-trigger]:hover .nav_link_text {
+    transform: translateY(-1.3em) rotate(0.001deg);
+  }
+
+  .nav_link_wrap[aria-current="page"]:hover .nav_link_text {
+    transform: translateY(0em) rotate(0.001deg);
+  }
+
+  .nav_link_wrap[aria-current="page"]:hover .nav_link_line {
+    transform: none;
+    opacity: 1;
+  }
+
+  /* — Footer — */
+
+  .footer_group_item:has(.clickable_link:hover) .footer_link_text,
+  .footer_group_item:has(.clickable_btn:hover)  .footer_link_text {
+    opacity: 0.55;
+  }
+
+} /* end @media (any-hover: hover) */
