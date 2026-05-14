@@ -647,21 +647,30 @@ function sendGAPageView() {
   });
 }
 
+
 function initPrefetch() {
   if (window.__prefetchBound) return;
   window.__prefetchBound = true;
 
   const prefetched = new Set();
+  const DELAY_MS = 100;
+  let pendingTimer = null;
+  let pendingUrl = null;
 
   const prefetch = (url) => {
     if (prefetched.has(url)) return;
     prefetched.add(url);
-
     const link = document.createElement("link");
     link.rel  = "prefetch";
     link.href = url;
     link.as   = "document";
     document.head.appendChild(link);
+  };
+
+  const cancel = () => {
+    clearTimeout(pendingTimer);
+    pendingTimer = null;
+    pendingUrl = null;
   };
 
   document.addEventListener("mouseover", (e) => {
@@ -676,8 +685,27 @@ function initPrefetch() {
 
     if (dest.origin !== location.origin) return;
     if (dest.pathname === location.pathname) return;
+    if (prefetched.has(dest.href)) return;
+    if (pendingUrl === dest.href) return;
 
-    prefetch(dest.href);
+    cancel();
+    pendingUrl = dest.href;
+    pendingTimer = setTimeout(() => {
+      prefetch(dest.href);
+      pendingUrl = null;
+    }, DELAY_MS);
+  }, true);
+
+  document.addEventListener("mouseout", (e) => {
+    const a = e.target.closest("a[href]");
+    if (!a) return;
+
+    if (a.contains(e.relatedTarget)) return;
+
+    let dest;
+    try { dest = new URL(a.getAttribute("href"), location.href); } catch (_) { return; }
+
+    if (pendingUrl === dest.href) cancel();
   }, true);
 }
 
