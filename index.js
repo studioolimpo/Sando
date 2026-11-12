@@ -7,6 +7,8 @@ gsap.registerPlugin(CustomEase, ScrollTrigger, SplitText, InertiaPlugin);
 history.scrollRestoration = "manual";
 
 let lenis = null;
+let lenisTick = null;
+let pageCleanups = [];
 let navThemeTl = null;
 let footerScrollTrigger = null;
 let navThemeTriggers = [];
@@ -42,7 +44,13 @@ gsap.defaults({ ease: "osmo", duration: durationDefault });
 // -----------------------------------------
 
 function initOnceFunctions() {
-  const loaderTl = initLogoRevealLoader();
+  let loaderTl = null;
+  try {
+    loaderTl = initLogoRevealLoader();
+  } catch (err) {
+    console.error("[Sando] Loader init failed:", err);
+    unlockScroll();
+  }
   
   if (loaderTl) {
     window.__loaderTl = loaderTl;
@@ -73,7 +81,7 @@ function initAfterEnterFunctions(next) {
   initFooterParallax();
   initNavThemeScroll();
   initDynamicYear();
-  initSmoothySlider();
+  pageCleanups.push(initSmoothySlider());
   sendGAPageView();
 
 
@@ -96,7 +104,7 @@ const loaderDelay = loaderTl && loaderTl.isActive()
   initHeroVisualEnter(loaderDelay, isFirstLoad, () => {
     initHeroVisualParallax();
     initHeroMouseParallax();
-    if (hasLenis) lenis.resize();
+    lenis?.resize();
     if (hasScrollTrigger) ScrollTrigger.refresh();
   });
 
@@ -119,7 +127,7 @@ function initViewsFunction() {
     {
       namespace: "404",
       afterEnter() {
-        initShokuBounce();
+        pageCleanups.push(initShokuBounce());
       },
     },
   ];
@@ -241,6 +249,10 @@ barba.hooks.beforeEnter(data => {
 });
 
 barba.hooks.afterLeave(() => {
+  // Per-page ticker/listener owners (Smooothy, Shoku) must not pile up across navigations
+  pageCleanups.forEach(fn => { try { fn?.(); } catch (_) {} });
+  pageCleanups = [];
+
   if (hasScrollTrigger) {
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
   }
@@ -254,7 +266,7 @@ barba.hooks.enter(data => {
 barba.hooks.afterEnter(data => {
   initAfterEnterFunctions(data.next.container);
   
-  if(hasLenis){
+  if (lenis) {
     lenis.resize();
     if (!scrollLocked) lenis.start(); 
   }
@@ -276,7 +288,12 @@ barba.init({
       
       // First load
       async once(data) {
-        initOnceFunctions();
+        // A failure here must never skip resetPage(), or the container stays position:fixed (no scroll)
+        try {
+          initOnceFunctions();
+        } catch (err) {
+          console.error("[Sando] Init failed:", err);
+        }
 
         return runPageOnceAnimation(data.next.container);
       },
@@ -328,27 +345,52 @@ function applyThemeFrom(container) {
 }
 
 function initLenis() {
-  if (lenis) return; 
-  if (!hasLenis) return;
+  if (lenis || !hasLenis || reducedMotion) return;
 
-  lenis = new Lenis({
-    lerp: 0.075,
-    wheelMultiplier: 1,
-  });
+  try {
+    lenis = new Lenis({
+      lerp: 0.075,
+      wheelMultiplier: 1,
+    });
+    // Smoke test before touching the ticker: gsap.ticker.add() wakes the ticker and
+    // runs listeners synchronously, so a broken build would otherwise throw out of init.
+    lenis.raf(gsap.ticker.time * 1000);
+  } catch (err) {
+    disableLenis(err);
+    return;
+  }
 
   if (hasScrollTrigger) {
     lenis.on("scroll", ScrollTrigger.update);
   }
 
-  gsap.ticker.add((time) => {
-    lenis.raf(time * 1000);
-  });
+  lenisTick = (time) => {
+    try {
+      lenis.raf(time * 1000);
+    } catch (err) {
+      disableLenis(err);
+    }
+  };
+  gsap.ticker.add(lenisTick);
 
   gsap.ticker.lagSmoothing(0);
-  
-  if (scrollLocked) lenis.stop();
 
-  
+  if (scrollLocked) lenis.stop();
+}
+
+// Native-scroll fallback: drop Lenis, keep only the intentional lock (loader) if one is active.
+function disableLenis(err) {
+  console.error(
+    "[Sando] Lenis disabled, falling back to native scroll. " +
+    "Known cause: lenis@1.3.17 leaks globals that gsap.registerPlugin(SplitText) overwrites, use lenis@1.3.27.",
+    err
+  );
+  if (lenisTick) gsap.ticker.remove(lenisTick);
+  lenisTick = null;
+  try { lenis?.destroy(); } catch (_) {}
+  lenis = null;
+  document.documentElement.classList.toggle("lenis-stopped", scrollLocked);
+  document.body.classList.toggle("lenis-stopped", scrollLocked);
 }
 
 function resetPage(container) {
@@ -495,8 +537,8 @@ function preventSamePageClicks() {
     if (dest.hash) {
       const target = getTargetFromHash(dest.hash);
       if (target) {
-        if (window.lenis?.scrollTo) {
-          window.lenis.scrollTo(target, { offset: -offset });
+        if (lenis) {
+          lenis.scrollTo(target, { offset: -offset });
         } else {
           target.scrollIntoView({ behavior: "smooth", block: "start" });
         }
@@ -507,8 +549,8 @@ function preventSamePageClicks() {
 
     if ((window.scrollY || 0) < 2) return;
 
-    if (window.lenis?.scrollTo) {
-      window.lenis.scrollTo(0);
+    if (lenis) {
+      lenis.scrollTo(0);
     } else {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -1098,7 +1140,7 @@ function initHeroSlideshow() {
     let placed = 0;
 
     function next() {
-      if (placed >= target) return;
+      if (placed >= target || !container.isConnected) return;
       if (showImage()) placed++;
 
       gsap.delayedCall((200 + placed * 80 + Math.random() * 300) / 1000, next);
@@ -1109,6 +1151,7 @@ function initHeroSlideshow() {
 
   function loop() {
     gsap.delayedCall((400 + Math.random() * 800) / 1000, () => {
+      if (!container.isConnected) return; // page left: stop the loop
       if (visibleCount < TARGET.min) showImage();
       else if (Math.random() > 0.5) showImage();
       loop();
